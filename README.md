@@ -3,6 +3,7 @@ TCofUS
 
 ## Overview
 
+A grid of tasks by iteration that includes UserIterationCapacity data, specifically the sum of TaskEstimates and Capacity.
 
 ## License
 
