@@ -31,6 +31,10 @@ Ext.define('CustomApp', {
             pageSize: 100,
             autoLoad: true,
             filters: [this.getContext().getTimeboxScope().getQueryFilter()],
+            /*
+            context:{ //added to use with App-debug.html
+                project: '/project/16177142574' 
+            },*/
             listeners: {
                 load: this._onTasksLoaded,
                 scope: this
@@ -44,6 +48,7 @@ Ext.define('CustomApp', {
     
     _onTasksLoaded: function(store, data){
             this.tasks = data;
+            //console.log('tasks', this.tasks);
             Ext.create('Rally.data.WsapiDataStore', {
                 model: 'UserIterationCapacity',
                 fetch: ['User', 'TaskEstimates', 'Iteration', 'Capacity'],  
@@ -57,34 +62,39 @@ Ext.define('CustomApp', {
             }); 
     },
        _onAllDataLoaded: function(store, data){
+            var that = this;
+            var pendingTasks = this.tasks.length;
                 var tasks = [];
                 var users = [];
-                that = this
-               if (data.length ===0) {
+                if (data.length ===0) {
                     this._createGrid();  //to force refresh on grid when there are no testsets in the iteration
-               }
-                Ext.Array.each(this.tasks, function(task) {
-                            var owner = task.get('Owner'); 
-                            var total;
-                            var cap;
-                                    Ext.Array.each(data, function(capacity){
-                                         //some tasks have no owner. If this condition is not checked Uncaught TypeError: Cannot read property '_refObjectName' of null 
-                                        if (owner && capacity.get('User')._refObjectName === owner._refObjectName) { 
-                                            total = capacity.get('TaskEstimates');
-                                            cap = capacity.get('Capacity');
-                                        }
-                                    });
-                                    var t  = {
+                }
+                _.each(that.tasks, function(task) {
+                    console.log('tasks', that.tasks);
+                    var owner = task.get('Owner'); 
+                    var total;
+                    var cap;
+                        _.each(data, function(capacity){
+                            //some tasks have no owner. If this condition is not checked Uncaught TypeError: Cannot read property '_refObjectName' of null 
+                            if (owner && capacity.get('User')._refObjectName === owner._refObjectName) { 
+                                total = capacity.get('TaskEstimates');
+                                cap = capacity.get('Capacity');
+                            }
+                            });
+                            var t  = {
                                 FormattedID: task.get('FormattedID'),
-                                _ref: task.get("_ref"),  //required to make FormattedID clickable
+                                _ref: task.get("_ref"),  
                                 Name: task.get('Name'),
                                 Estimate: task.get('Estimate'),
                                 Owner: (owner && owner._refObjectName) || 'None',
                                 Capacity: cap,
                                 TaskEstimates: total
                             };
-                                    that._createGrid(tasks);
-                                    tasks.push(t);
+                             tasks.push(t);
+                            --pendingTasks;
+                             if (pendingTasks === 0) {
+                                that._createGrid(tasks);
+                            }       
                  });
 
  },
